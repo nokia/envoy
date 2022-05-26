@@ -258,7 +258,7 @@ void ConnectionManager::sendLocalReply(MessageMetadata& metadata, const DirectRe
   const DirectResponse::ResponseType result = response.encode(metadata, buffer);
 
   ENVOY_CONN_LOG(
-      debug, "send local reply {} --> {} bytes {}\n", read_callbacks_->connection(),
+      debug, "send local reply {} --> {} bytes {}\n{}", read_callbacks_->connection(),
       read_callbacks_->connection().connectionInfoProvider().localAddress()->asStringView(),
       read_callbacks_->connection().connectionInfoProvider().remoteAddress()->asStringView(),
       buffer.length(), buffer.toString());
