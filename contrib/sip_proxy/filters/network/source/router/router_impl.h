@@ -261,6 +261,8 @@ public:
       : cluster_manager_(cluster_manager), //stats_(generateStats(stat_prefix, scope)),
         context_(context) {
     UNREFERENCED_PARAMETER(context_);
+    UNREFERENCED_PARAMETER(stat_prefix);
+    UNREFERENCED_PARAMETER(scope);
   }
 
   // SipFilters::DecoderFilter

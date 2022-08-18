@@ -68,7 +68,7 @@ void SipHeader::parseHeader() {
         isHost = false;
       }
     } else {
-      auto param = str.substr(0,value_pos);
+      auto param = str.substr(0, value_pos);
       value_pos += 1;
       auto value = str.substr(value_pos);
       if (!param.empty() && !value.empty()) {

@@ -737,6 +737,7 @@ DecoderEventHandler& ResponseDecoder::newDecoderEventHandler(MessageMetadataShar
   //    .stats()
   //    .counterFromElements(methodStr[metadata->methodType()], "response_received")
   //    .inc();
+  UNREFERENCED_PARAMETER(metadata);
   return *this;
 }
 
