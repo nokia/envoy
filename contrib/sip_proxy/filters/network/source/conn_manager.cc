@@ -102,7 +102,11 @@ void TrafficRoutingAssistantHandler::complete(const TrafficRoutingAssistant::Res
         parent_.onResponseHandleForPendingList(
             message_type, item.first,
             [&](MessageMetadataSharedPtr metadata, DecoderEventHandler& decoder_event_handler) {
-              cache_manager_[message_type].emplace(item.first, item.second);
+              // XXX For skey case, no need to add to local cache. This will be controlled by config
+              // cache->add_query_to_cache.
+              if (message_type != "skey") {
+                cache_manager_[message_type].emplace(item.first, item.second);
+              }
               metadata->setDestination(item.second);
               return parent_.continueHandling(metadata, decoder_event_handler);
             });
