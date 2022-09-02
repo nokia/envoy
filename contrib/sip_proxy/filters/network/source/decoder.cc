@@ -238,9 +238,10 @@ Decoder::HeaderHandler::HeaderHandler(MessageHandler& parent)
                        } {}
 
 int Decoder::HeaderHandler::processPath(absl::string_view& header) {
-  metadata()->deleteInstipOperation(rawOffset(), header);
-  metadata()->addEPOperation(rawOffset(), header, HeaderType::Path,
-                             parent_.parent_.settings()->localServices());
+  UNREFERENCED_PARAMETER(header);
+  // metadata()->deleteInstipOperation(rawOffset(), header);
+  // metadata()->addEPOperation(rawOffset(), header, HeaderType::Path,
+  //                            parent_.parent_.settings()->localServices());
   return 0;
 }
 
@@ -254,19 +255,21 @@ int Decoder::HeaderHandler::processRoute(absl::string_view& header) {
 }
 
 int Decoder::HeaderHandler::processRecordRoute(absl::string_view& header) {
+  UNREFERENCED_PARAMETER(header);
   if (!isFirstRecordRoute()) {
     return 0;
   }
 
   setFirstRecordRoute(false);
 
-  metadata()->addEPOperation(rawOffset(), header, HeaderType::RRoute,
-                             parent_.parent_.settings()->localServices());
+  // metadata()->addEPOperation(rawOffset(), header, HeaderType::RRoute,
+  //                            parent_.parent_.settings()->localServices());
   return 0;
 }
 
 int Decoder::HeaderHandler::processWwwAuth(absl::string_view& header) {
-  metadata()->addOpaqueOperation(rawOffset(), header);
+  UNREFERENCED_PARAMETER(header);
+  // metadata()->addOpaqueOperation(rawOffset(), header);
   return 0;
 }
 
@@ -296,26 +299,28 @@ int Decoder::HeaderHandler::processPCookieIPMap(absl::string_view& header) {
   auto ip = header.substr(loc + 1, header.length() - loc - 1);
 
   metadata()->setPCookieIpMap(std::make_pair(std::string(lskpmc), std::string(ip)));
-  metadata()->setOperation(Operation(OperationType::Delete, rawOffset(),
-                                     DeleteOperationValue(header.length() + strlen("\r\n"))));
+  // metadata()->setOperation(Operation(OperationType::Delete, rawOffset(),
+  //                                    DeleteOperationValue(header.length() + strlen("\r\n"))));
   return 0;
 }
 
 int Decoder::HeaderHandler::processContact(absl::string_view& header) {
-  metadata()->deleteInstipOperation(rawOffset(), header);
-  metadata()->addEPOperation(rawOffset(), header, HeaderType::Contact,
-                             parent_.parent_.settings()->localServices());
+  UNREFERENCED_PARAMETER(header);
+  // metadata()->deleteInstipOperation(rawOffset(), header);
+  // metadata()->addEPOperation(rawOffset(), header, HeaderType::Contact,
+  //                            parent_.parent_.settings()->localServices());
   return 0;
 }
 
 int Decoder::HeaderHandler::processServiceRoute(absl::string_view& header) {
+  UNREFERENCED_PARAMETER(header);
   if (!isFirstServiceRoute()) {
     return 0;
   }
   setFirstServiceRoute(false);
 
-  metadata()->addEPOperation(rawOffset(), header, HeaderType::SRoute,
-                             parent_.parent_.settings()->localServices());
+  // metadata()->addEPOperation(rawOffset(), header, HeaderType::SRoute,
+  //                            parent_.parent_.settings()->localServices());
   return 0;
 }
 
