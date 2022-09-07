@@ -486,7 +486,7 @@ FilterStatus Router::messageEnd() {
   std::shared_ptr<Encoder> encoder = std::make_shared<EncoderImpl>();
   encoder->encode(metadata_, transport_buffer);
 
-  ENVOY_STREAM_LOG(trace, "send buffer : {} bytes\n{}", *callbacks_, transport_buffer.length(),
+  ENVOY_STREAM_LOG(debug, "send buffer : {} bytes\n{}", *callbacks_, transport_buffer.length(),
                    transport_buffer.toString());
 
   // callbacks_->stats()
