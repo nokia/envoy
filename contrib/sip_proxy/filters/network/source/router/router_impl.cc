@@ -60,8 +60,13 @@ RouteConstSharedPtr GeneralRouteEntryImpl::matches(MessageMetadata& metadata) co
   header = metadata.header(type).text();
   if (header.empty()) {
     if (type == HeaderType::Route) {
+      if (metadata.header(HeaderType::TopLine).empty()) {
+        ENVOY_LOG(error, "No route and r-uri");
+        return nullptr;
+      }
       header = metadata.header(HeaderType::TopLine).text();
       ENVOY_LOG(debug, "No route, r-uri {} is used ", header);
+      type = HeaderType::TopLine;
     } else {
       ENVOY_LOG(debug, "header {} is empty", header_);
       return nullptr;
@@ -73,7 +78,7 @@ RouteConstSharedPtr GeneralRouteEntryImpl::matches(MessageMetadata& metadata) co
     return clusterEntry(metadata);
   }
 
-  auto domain = metadata.getDomainFromHeaderParameter(header, parameter_);
+  auto domain = metadata.getDomainFromHeaderParameter(type, parameter_);
 
   if (domain_ == domain) {
     ENVOY_LOG(trace, "Route matched with header: {}, parameter: {} and domain: {}", header_,
@@ -142,11 +147,16 @@ QueryStatus Router::handleCustomizedAffinity(const std::string& header, const st
       host = std::string(metadata->opaque().value());
     } else {
       // Handler other Requests except REGISTER
-      if ((metadata->header(HeaderType::Route).empty() &&
-           metadata->header(HeaderType::TopLine).hasParam("ep"))) {
-        host = std::string(metadata->header(HeaderType::TopLine).param("ep"));
-      } else if (metadata->header(HeaderType::Route).hasParam("ep")) {
-        host = std::string(metadata->header(HeaderType::Route).param("ep"));
+      if (metadata->header(HeaderType::Route).empty()) {
+        metadata->parseHeader(HeaderType::TopLine);
+        if (metadata->header(HeaderType::TopLine).hasParam("ep")) {
+          host = std::string(metadata->header(HeaderType::TopLine).param("ep"));
+        }
+      } else {
+        metadata->parseHeader(HeaderType::Route);
+        if (metadata->header(HeaderType::Route).hasParam("ep")) {
+          host = std::string(metadata->header(HeaderType::Route).param("ep"));
+        }
       }
     }
 
@@ -238,10 +248,18 @@ FilterStatus Router::handleAffinity() {
     } else if (metadata->methodType() != MethodType::Register && options->sessionAffinity()) {
       metadata->setStopLoadBalance(false);
 
-      if ((metadata->header(HeaderType::Route).empty() &&
-           metadata->header(HeaderType::TopLine).hasParam("ep")) ||
-          (metadata->header(HeaderType::Route).hasParam("ep"))) {
-        metadata->affinity().emplace_back("Route", "ep", "ep", false, false);
+      if (metadata->header(HeaderType::Route).empty()) {
+        if (!metadata->header(HeaderType::TopLine).empty()) {
+          metadata->parseHeader(HeaderType::TopLine);
+          if (metadata->header(HeaderType::TopLine).hasParam("ep")) {
+            metadata->affinity().emplace_back("Route", "ep", "ep", false, false);
+          }
+        }
+      } else {
+        metadata->parseHeader(HeaderType::Route);
+        if (metadata->header(HeaderType::Route).hasParam("ep")) {
+          metadata->affinity().emplace_back("Route", "ep", "ep", false, false);
+        }
       }
     } else if (metadata->methodType() == MethodType::Register && options->registrationAffinity()) {
       metadata->setStopLoadBalance(false);
@@ -272,7 +290,7 @@ FilterStatus Router::transportBegin(MessageMetadataSharedPtr metadata) {
   route_ = callbacks_->route();
   if (!route_) {
     ENVOY_STREAM_LOG(debug, "no route matched", *callbacks_);
-    stats_.route_missing_.inc();
+    // stats_.route_missing_.inc();
     throw AppException(AppExceptionType::UnknownMethod, "envoy no match route found");
   }
 
@@ -282,7 +300,7 @@ FilterStatus Router::transportBegin(MessageMetadataSharedPtr metadata) {
   Upstream::ThreadLocalCluster* cluster = cluster_manager_.getThreadLocalCluster(cluster_name);
   if (!cluster) {
     ENVOY_STREAM_LOG(debug, "unknown cluster '{}'", *callbacks_, cluster_name);
-    stats_.unknown_cluster_.inc();
+    // stats_.unknown_cluster_.inc();
     throw AppException(AppExceptionType::InternalError,
                        fmt::format("unknown cluster '{}'", cluster_name));
   }
@@ -292,7 +310,7 @@ FilterStatus Router::transportBegin(MessageMetadataSharedPtr metadata) {
   ENVOY_STREAM_LOG(debug, "cluster '{}' matched", *callbacks_, cluster_name);
 
   if (cluster_->maintenanceMode()) {
-    stats_.upstream_rq_maintenance_mode_.inc();
+    // stats_.upstream_rq_maintenance_mode_.inc();
     throw AppException(AppExceptionType::InternalError,
                        fmt::format("maintenance mode for cluster '{}'", cluster_name));
   }
@@ -310,7 +328,7 @@ Router::messageHandlerWithLoadBalancer(std::shared_ptr<TransactionInfo> transact
                                        bool& lb_ret) {
   auto conn_pool = thread_local_cluster_->tcpConnPool(Upstream::ResourcePriority::Default, this);
   if (!conn_pool) {
-    stats_.no_healthy_upstream_.inc();
+    // stats_.no_healthy_upstream_.inc();
     if (dest.empty()) {
       throw AppException(AppExceptionType::InternalError,
                          fmt::format("envoy no healthy upstream endpoint during load balance"));
@@ -468,12 +486,12 @@ FilterStatus Router::messageEnd() {
   std::shared_ptr<Encoder> encoder = std::make_shared<EncoderImpl>();
   encoder->encode(metadata_, transport_buffer);
 
-  ENVOY_STREAM_LOG(trace, "send buffer : {} bytes\n{}", *callbacks_, transport_buffer.length(),
+  ENVOY_STREAM_LOG(debug, "send buffer : {} bytes\n{}", *callbacks_, transport_buffer.length(),
                    transport_buffer.toString());
 
-  callbacks_->stats()
-      .counterFromElements(methodStr[metadata_->methodType()], "request_proxied")
-      .inc();
+  // callbacks_->stats()
+  //     .counterFromElements(methodStr[metadata_->methodType()], "request_proxied")
+  //     .inc();
   upstream_request_->write(transport_buffer, false);
   return FilterStatus::Continue;
 }
@@ -715,10 +733,11 @@ FilterStatus ResponseDecoder::transportBegin(MessageMetadataSharedPtr metadata) 
 }
 
 DecoderEventHandler& ResponseDecoder::newDecoderEventHandler(MessageMetadataSharedPtr metadata) {
-  parent_.decoderFilterCallbacks()
-      .stats()
-      .counterFromElements(methodStr[metadata->methodType()], "response_received")
-      .inc();
+  // parent_.decoderFilterCallbacks()
+  //     .stats()
+  //     .counterFromElements(methodStr[metadata->methodType()], "response_received")
+  //     .inc();
+  UNREFERENCED_PARAMETER(metadata);
   return *this;
 }
 

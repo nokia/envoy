@@ -102,13 +102,17 @@ void TrafficRoutingAssistantHandler::complete(const TrafficRoutingAssistant::Res
         parent_.onResponseHandleForPendingList(
             message_type, item.first,
             [&](MessageMetadataSharedPtr metadata, DecoderEventHandler& decoder_event_handler) {
-              cache_manager_[message_type].emplace(item.first, item.second);
+              // XXX For skey case, no need to add to local cache. This will be controlled by config
+              // cache->add_query_to_cache.
+              if (message_type != "skey") {
+                cache_manager_[message_type].emplace(item.first, item.second);
+              }
               metadata->setDestination(item.second);
               return parent_.continueHandling(metadata, decoder_event_handler);
             });
       }
 
-      // If the wrong reponse received, then try next affinity
+      // If the wrong response received, then try next affinity
       parent_.onResponseHandleForPendingList(
           message_type, item.first,
           [&](MessageMetadataSharedPtr metadata, DecoderEventHandler& decoder_event_handler) {
@@ -281,7 +285,7 @@ void ConnectionManager::sendLocalReply(MessageMetadata& metadata, const DirectRe
   default:
     PANIC("not reached");
   }
-  stats_.counterFromElements("", "local-generated-response").inc();
+  // stats_.counterFromElements("", "local-generated-response").inc();
 }
 
 void ConnectionManager::setLocalResponseSent(absl::string_view transaction_id) {
@@ -330,7 +334,7 @@ void ConnectionManager::onEvent(Network::ConnectionEvent event) {
 }
 
 DecoderEventHandler& ConnectionManager::newDecoderEventHandler(MessageMetadataSharedPtr metadata) {
-  stats_.counterFromElements(methodStr[metadata->methodType()], "request_received").inc();
+  // stats_.counterFromElements(methodStr[metadata->methodType()], "request_received").inc();
 
   std::string&& k = std::string(metadata->transactionId().value());
   // if (metadata->methodType() == MethodType::Ack) {
@@ -395,7 +399,7 @@ FilterStatus ConnectionManager::ResponseDecoder::transportEnd() {
   cm.read_callbacks_->connection().write(buffer, false);
 
   cm.stats_.response_.inc();
-  cm.stats_.counterFromElements(methodStr[metadata_->methodType()], "response_proxied").inc();
+  // cm.stats_.counterFromElements(methodStr[metadata_->methodType()], "response_proxied").inc();
 
   return FilterStatus::Continue;
 }
