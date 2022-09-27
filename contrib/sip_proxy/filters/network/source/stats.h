@@ -1,15 +1,32 @@
 #pragma once
 
+#include <functional>
 #include <memory>
 #include <string>
 
 #include "envoy/stats/scope.h"
 #include "envoy/stats/stats_macros.h"
+#include "contrib/sip_proxy/filters/network/source/sip.h"
+#include "filters/filter.h"
 
 namespace Envoy {
 namespace Extensions {
 namespace NetworkFilters {
 namespace SipProxy {
+
+enum SipMethodStatsSuffix {
+	RequestReceived,
+	RequestProxied,
+	ResponseReceived,
+	ResponseProxied,
+	NullSuffix
+};
+
+#define SIP_METHOD_COUNTER_CONSTRUCT(method, postfix)                                              \
+  POOL_COUNTER_PREFIX(scope, prefix)(method_##postfix)
+
+#define SIP_METHOD_COUNTER(method, postfix)                                                        \
+  sip_method_counter_vector_[method * SipMethodStatsPostfix::NullPosfix + postfix]
 
 /**
  * All sip filter stats. @see stats_macros.h
@@ -23,6 +40,7 @@ namespace SipProxy {
   COUNTER(response_exception)                                                                      \
   COUNTER(response_reply)                                                                          \
   COUNTER(response_success)                                                                        \
+  COUNTER(response_local_generated)                                                                        \
   GAUGE(request_active, Accumulate)                                                                \
   HISTOGRAM(request_time_ms, Milliseconds)
 
@@ -33,21 +51,25 @@ struct SipFilterStats {
   ALL_SIP_FILTER_STATS(GENERATE_COUNTER_STRUCT, GENERATE_GAUGE_STRUCT, GENERATE_HISTOGRAM_STRUCT)
 
   static SipFilterStats generateStats(const std::string& prefix, Stats::Scope& scope) {
+    std::vector<std::reference_wrapper<Envoy::Stats::Counter>> sip_method_counter_vector;
+    for (int i = MethodType::Invite; i != MethodType::NullMethod; ++i) {
+	auto method_str = methodStr[i];
+	sip_method_counter_vector[i * SipMethodStatsSuffix::NullSuffix + SipMethodStatsSuffix::RequestReceived] = scope.counterFromString(Envoy::statPrefixJoin(prefix, method_str + "_request_received"));
+	sip_method_counter_vector[i * SipMethodStatsSuffix::NullSuffix + SipMethodStatsSuffix::RequestProxied] = scope.counterFromString(Envoy::statPrefixJoin(prefix, method_str + "_request_proxied"));
+	sip_method_counter_vector[i * SipMethodStatsSuffix::NullSuffix + SipMethodStatsSuffix::ResponseReceived] = scope.counterFromString(Envoy::statPrefixJoin(prefix, method_str + "_response_received"));
+	sip_method_counter_vector[i * SipMethodStatsSuffix::NullSuffix + SipMethodStatsSuffix::ResponseProxied] = scope.counterFromString(Envoy::statPrefixJoin(prefix, method_str + "_response_proxied"));
+    }
+
     return SipFilterStats{ALL_SIP_FILTER_STATS(POOL_COUNTER_PREFIX(scope, prefix),
                                                POOL_GAUGE_PREFIX(scope, prefix),
-                                               POOL_HISTOGRAM_PREFIX(scope, prefix)) scope};
+                                               POOL_HISTOGRAM_PREFIX(scope, prefix)) sip_method_counter_vector, scope};
   }
 
-  Stats::ElementVec statElements(Stats::Element method, Stats::Element suffix) const {
-    return Stats::ElementVec{Stats::DynamicSavedName("sip"), method, suffix};
+  Envoy::Stats::Counter & sipMethodCounter(MethodType method, SipMethodStatsSuffix suffix) {
+  	return sip_method_counter_vector_[static_cast<int>(method) * SipMethodStatsSuffix::NullSuffix + suffix];
   }
 
-  Stats::Counter& counterFromElements(absl::string_view method, absl::string_view suffix) {
-    Stats::ElementVec elements =
-        statElements(Stats::DynamicName{method}, Stats::DynamicName{suffix});
-    return Stats::Utility::counterFromElements(scope_, elements);
-  }
-
+  std::vector<std::reference_wrapper<Envoy::Stats::Counter>> sip_method_counter_vector_;
   Stats::Scope& scope_;
 };
 
