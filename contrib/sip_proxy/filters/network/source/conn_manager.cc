@@ -7,7 +7,6 @@
 
 #include "contrib/sip_proxy/filters/network/source/app_exception_impl.h"
 #include "contrib/sip_proxy/filters/network/source/encoder.h"
-#include "stats.h"
 
 namespace Envoy {
 namespace Extensions {
@@ -32,7 +31,17 @@ TrafficRoutingAssistantHandler::TrafficRoutingAssistantHandler(
 void TrafficRoutingAssistantHandler::updateTrafficRoutingAssistant(
     const std::string& type, const std::string& key, const std::string& val,
     const absl::optional<TraContextMap> context) {
-  if (cache_manager_[type][key] != val) {
+
+  bool should_update_tra = false;
+  try {
+    if (cache_manager_.at(type, key) != val) {
+      should_update_tra = true;
+    }
+  } catch (std::out_of_range) {
+    should_update_tra = true;
+  }
+
+  if (should_update_tra) {
     cache_manager_.insertCache(type, key, val);
     if (traClient()) {
       traClient()->updateTrafficRoutingAssistant(
@@ -45,9 +54,11 @@ void TrafficRoutingAssistantHandler::updateTrafficRoutingAssistant(
 QueryStatus TrafficRoutingAssistantHandler::retrieveTrafficRoutingAssistant(
     const std::string& type, const std::string& key, const absl::optional<TraContextMap> context,
     SipFilters::DecoderFilterCallbacks& activetrans, std::string& host) {
-  if (cache_manager_.contains(type, key)) {
-    host = cache_manager_[type][key];
+  try {
+    host = cache_manager_.at(type, key);
     return QueryStatus::Continue;
+  } catch (std::out_of_range) {
+    // type, key doesn't exist, continue
   }
 
   if (activetrans.metadata()->affinityIteration()->query()) {
