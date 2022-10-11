@@ -1,7 +1,5 @@
 #include "contrib/sip_proxy/filters/network/source/metadata.h"
 
-#include "re2/re2.h"
-
 namespace Envoy {
 namespace Extensions {
 namespace NetworkFilters {

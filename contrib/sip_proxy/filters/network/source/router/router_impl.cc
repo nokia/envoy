@@ -1,7 +1,5 @@
 #include "contrib/sip_proxy/filters/network/source/router/router_impl.h"
 
-#include <memory>
-
 #include "envoy/upstream/cluster_manager.h"
 
 #include "source/common/common/logger.h"
@@ -10,7 +8,6 @@
 #include "source/common/router/metadatamatchcriteria_impl.h"
 #include "source/common/tracing/http_tracer_impl.h"
 
-#include "absl/strings/match.h"
 #include "contrib/envoy/extensions/filters/network/sip_proxy/v3alpha/route.pb.h"
 #include "contrib/sip_proxy/filters/network/source/app_exception_impl.h"
 #include "contrib/sip_proxy/filters/network/source/conn_manager.h"
@@ -290,7 +287,7 @@ FilterStatus Router::transportBegin(MessageMetadataSharedPtr metadata) {
   route_ = callbacks_->route();
   if (!route_) {
     ENVOY_STREAM_LOG(debug, "no route matched", *callbacks_);
-    // stats_.route_missing_.inc();
+    stats_.route_missing_.inc();
     throw AppException(AppExceptionType::UnknownMethod, "envoy no match route found");
   }
 
@@ -300,7 +297,7 @@ FilterStatus Router::transportBegin(MessageMetadataSharedPtr metadata) {
   Upstream::ThreadLocalCluster* cluster = cluster_manager_.getThreadLocalCluster(cluster_name);
   if (!cluster) {
     ENVOY_STREAM_LOG(debug, "unknown cluster '{}'", *callbacks_, cluster_name);
-    // stats_.unknown_cluster_.inc();
+    stats_.unknown_cluster_.inc();
     throw AppException(AppExceptionType::InternalError,
                        fmt::format("unknown cluster '{}'", cluster_name));
   }
@@ -310,7 +307,7 @@ FilterStatus Router::transportBegin(MessageMetadataSharedPtr metadata) {
   ENVOY_STREAM_LOG(debug, "cluster '{}' matched", *callbacks_, cluster_name);
 
   if (cluster_->maintenanceMode()) {
-    // stats_.upstream_rq_maintenance_mode_.inc();
+    stats_.upstream_rq_maintenance_mode_.inc();
     throw AppException(AppExceptionType::InternalError,
                        fmt::format("maintenance mode for cluster '{}'", cluster_name));
   }
@@ -328,7 +325,7 @@ Router::messageHandlerWithLoadBalancer(std::shared_ptr<TransactionInfo> transact
                                        bool& lb_ret) {
   auto conn_pool = thread_local_cluster_->tcpConnPool(Upstream::ResourcePriority::Default, this);
   if (!conn_pool) {
-    // stats_.no_healthy_upstream_.inc();
+    stats_.no_healthy_upstream_.inc();
     if (dest.empty()) {
       throw AppException(AppExceptionType::InternalError,
                          fmt::format("envoy no healthy upstream endpoint during load balance"));
@@ -489,9 +486,9 @@ FilterStatus Router::messageEnd() {
   ENVOY_STREAM_LOG(debug, "send buffer : {} bytes\n{}", *callbacks_, transport_buffer.length(),
                    transport_buffer.toString());
 
-  // callbacks_->stats()
-  //     .counterFromElements(methodStr[metadata_->methodType()], "request_proxied")
-  //     .inc();
+  callbacks_->stats()
+      .sipMethodCounter(metadata_->methodType(), SipMethodStatsSuffix::RequestProxied)
+      .inc();
   upstream_request_->write(transport_buffer, false);
   return FilterStatus::Continue;
 }
@@ -733,11 +730,10 @@ FilterStatus ResponseDecoder::transportBegin(MessageMetadataSharedPtr metadata) 
 }
 
 DecoderEventHandler& ResponseDecoder::newDecoderEventHandler(MessageMetadataSharedPtr metadata) {
-  // parent_.decoderFilterCallbacks()
-  //     .stats()
-  //     .counterFromElements(methodStr[metadata->methodType()], "response_received")
-  //     .inc();
-  UNREFERENCED_PARAMETER(metadata);
+  parent_.decoderFilterCallbacks()
+      .stats()
+      .sipMethodCounter(metadata->methodType(), SipMethodStatsSuffix::ResponseReceived)
+      .inc();
   return *this;
 }
 
