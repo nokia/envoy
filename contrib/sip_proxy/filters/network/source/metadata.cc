@@ -109,7 +109,7 @@ void MessageMetadata::setTransactionId(absl::string_view data) {
   }
   start_index += strlen("branch=");
 
-  auto end_index = data.find_first_of(";>", start_index);
+  auto end_index = data.find_first_of(" ,;>", start_index);
   if (end_index == absl::string_view::npos) {
     end_index = data.size();
   }
