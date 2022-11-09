@@ -280,8 +280,8 @@ int Decoder::HeaderHandler::processPCookieIPMap(absl::string_view& header) {
   auto ip = header.substr(loc + 1, header.length() - loc - 1);
 
   metadata()->setPCookieIpMap(std::make_pair(std::string(lskpmc), std::string(ip)));
-  // metadata()->setOperation(Operation(OperationType::Delete, rawOffset(),
-  //                                    DeleteOperationValue(header.length() + strlen("\r\n"))));
+  metadata()->setOperation(Operation(OperationType::Delete, rawOffset(),
+                                     DeleteOperationValue(header.length() + strlen("\r\n"))));
   return 0;
 }
 
