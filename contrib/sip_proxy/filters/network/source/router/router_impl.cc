@@ -137,6 +137,25 @@ QueryStatus Router::handleCustomizedAffinity(const std::string& header, const st
   std::string host;
   QueryStatus ret = QueryStatus::Stop;
 
+  bool query = metadata->affinityIteration()->query();
+  auto handle_no_query = [&]() {
+    auto header_type = HeaderTypes::get().str2Header(header);
+    if (metadata->header(HeaderType::Route).empty()) {
+      header_type = HeaderType::TopLine;
+    }
+
+    metadata->parseHeader(header_type);
+    if (metadata->header(header_type).hasParam(type)) {
+      host = std::string(metadata->header(header_type).param(key));
+    }
+
+    if (!host.empty()) {
+      return QueryStatus::Continue;
+    } else {
+      return QueryStatus::Stop;
+    }
+  };
+
   if (type == "ep") {
     // For REGISTER, ep comes from Authorization header with opaque, and opaque is set when parse
     // Authorization
@@ -144,23 +163,7 @@ QueryStatus Router::handleCustomizedAffinity(const std::string& header, const st
       host = std::string(metadata->opaque().value());
     } else {
       // Handler other Requests except REGISTER
-      if (metadata->header(HeaderType::Route).empty()) {
-        metadata->parseHeader(HeaderType::TopLine);
-        if (metadata->header(HeaderType::TopLine).hasParam("ep")) {
-          host = std::string(metadata->header(HeaderType::TopLine).param("ep"));
-        }
-      } else {
-        metadata->parseHeader(HeaderType::Route);
-        if (metadata->header(HeaderType::Route).hasParam("ep")) {
-          host = std::string(metadata->header(HeaderType::Route).param("ep"));
-        }
-      }
-    }
-
-    if (!host.empty()) {
-      ret = QueryStatus::Continue;
-    } else {
-      ret = QueryStatus::Stop;
+      ret = handle_no_query();
     }
   } else if (type == "text") {
     auto header_type = HeaderTypes::get().str2Header(header);
@@ -168,6 +171,10 @@ QueryStatus Router::handleCustomizedAffinity(const std::string& header, const st
     ret = callbacks_->traHandler()->retrieveTrafficRoutingAssistant(
         header, std::string(metadata->header(header_type).text()), metadata->traContext(),
         *callbacks_, host);
+  } else if (!query) {
+    // query == false, eg. inst-ip=192.168.0.1, use value as host;
+    // query == true, eg. lskpmc=S2F3, use value as key to query local cache or TRA.
+    ret = handle_no_query();
   } else {
     ret = callbacks_->traHandler()->retrieveTrafficRoutingAssistant(
         type, key, metadata->traContext(), *callbacks_, host);
@@ -267,9 +274,9 @@ FilterStatus Router::handleAffinity() {
       }
     }
 
-    // NOTE: After constructed metadata->affinity(), must invoke metadata->resetAffinityIteration()
-    // to set the iterator correctly. otherwise affinityIteration can't point to the changed
-    // affinity correctly.
+    // NOTE: After constructed metadata->affinity(), must invoke
+    // metadata->resetAffinityIteration() to set the iterator correctly. otherwise
+    // affinityIteration can't point to the changed affinity correctly.
     metadata->resetAffinityIteration();
   }
 

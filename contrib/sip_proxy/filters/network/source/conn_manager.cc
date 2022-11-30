@@ -57,14 +57,14 @@ QueryStatus TrafficRoutingAssistantHandler::retrieveTrafficRoutingAssistant(
   }
 
   if (activetrans.metadata()->affinityIteration()->query()) {
-    parent_.pushIntoPendingList(type, key, activetrans, [&]() {
-      if (traClient()) {
+    if (traClient()) {
+      parent_.pushIntoPendingList(type, key, activetrans, [&]() {
         traClient()->retrieveTrafficRoutingAssistant(type, key, context,
                                                      Tracing::NullSpan::instance(), stream_info_);
-      }
-    });
-    host = "";
-    return QueryStatus::Pending;
+      });
+      host = "";
+      return QueryStatus::Pending;
+    }
   }
   host = "";
   return QueryStatus::Stop;
@@ -72,6 +72,7 @@ QueryStatus TrafficRoutingAssistantHandler::retrieveTrafficRoutingAssistant(
 
 void TrafficRoutingAssistantHandler::deleteTrafficRoutingAssistant(
     const std::string& type, const std::string& key, const absl::optional<TraContextMap> context) {
+
   cache_manager_[type].erase(key);
   if (traClient()) {
     traClient()->deleteTrafficRoutingAssistant(type, key, context, Tracing::NullSpan::instance(),
@@ -80,6 +81,7 @@ void TrafficRoutingAssistantHandler::deleteTrafficRoutingAssistant(
 }
 
 void TrafficRoutingAssistantHandler::subscribeTrafficRoutingAssistant(const std::string& type) {
+
   if (traClient()) {
     traClient()->subscribeTrafficRoutingAssistant(type, Tracing::NullSpan::instance(),
                                                   stream_info_);
@@ -148,7 +150,6 @@ void TrafficRoutingAssistantHandler::complete(const TrafficRoutingAssistant::Res
   }
   case TrafficRoutingAssistant::ResponseType::FailureResp: {
     ENVOY_LOG(trace, "TRA === FailureResp");
-
     break;
   }
   default:
