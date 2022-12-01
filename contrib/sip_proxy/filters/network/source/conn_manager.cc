@@ -32,13 +32,9 @@ void TrafficRoutingAssistantHandler::updateTrafficRoutingAssistant(
     const std::string& type, const std::string& key, const std::string& val,
     const absl::optional<TraContextMap> context) {
 
-  bool should_update_tra = false;
-  try {
-    if (cache_manager_.at(type, key) != val) {
-      should_update_tra = true;
-    }
-  } catch (std::out_of_range) {
-    should_update_tra = true;
+  bool should_update_tra = true;
+  if (cache_manager_.at(type, key) == val) {
+    should_update_tra = false;
   }
 
   if (should_update_tra) {
@@ -54,22 +50,21 @@ void TrafficRoutingAssistantHandler::updateTrafficRoutingAssistant(
 QueryStatus TrafficRoutingAssistantHandler::retrieveTrafficRoutingAssistant(
     const std::string& type, const std::string& key, const absl::optional<TraContextMap> context,
     SipFilters::DecoderFilterCallbacks& activetrans, std::string& host) {
-  try {
-    host = cache_manager_.at(type, key);
+
+  host = cache_manager_.at(type, key);
+  if (!host.empty()) {
     return QueryStatus::Continue;
-  } catch (std::out_of_range) {
-    // type, key doesn't exist, continue
   }
 
   if (activetrans.metadata()->affinityIteration()->query()) {
-    parent_.pushIntoPendingList(type, key, activetrans, [&]() {
-      if (traClient()) {
+    if (traClient()) {
+      parent_.pushIntoPendingList(type, key, activetrans, [&]() {
         traClient()->retrieveTrafficRoutingAssistant(type, key, context,
                                                      Tracing::NullSpan::instance(), stream_info_);
-      }
-    });
-    host = "";
-    return QueryStatus::Pending;
+      });
+      host = "";
+      return QueryStatus::Pending;
+    }
   }
   host = "";
   return QueryStatus::Stop;
@@ -77,7 +72,7 @@ QueryStatus TrafficRoutingAssistantHandler::retrieveTrafficRoutingAssistant(
 
 void TrafficRoutingAssistantHandler::deleteTrafficRoutingAssistant(
     const std::string& type, const std::string& key, const absl::optional<TraContextMap> context) {
-  cache_manager_[type].erase(key);
+  cache_manager_.erase(type, key);
   if (traClient()) {
     traClient()->deleteTrafficRoutingAssistant(type, key, context, Tracing::NullSpan::instance(),
                                                stream_info_);
@@ -85,6 +80,7 @@ void TrafficRoutingAssistantHandler::deleteTrafficRoutingAssistant(
 }
 
 void TrafficRoutingAssistantHandler::subscribeTrafficRoutingAssistant(const std::string& type) {
+
   if (traClient()) {
     traClient()->subscribeTrafficRoutingAssistant(type, Tracing::NullSpan::instance(),
                                                   stream_info_);
@@ -114,10 +110,10 @@ void TrafficRoutingAssistantHandler::complete(const TrafficRoutingAssistant::Res
         parent_.onResponseHandleForPendingList(
             message_type, item.first,
             [&](MessageMetadataSharedPtr metadata, DecoderEventHandler& decoder_event_handler) {
-              // XXX For skey case, no need to add to local cache. This will be controlled by config
-              // cache->add_query_to_cache.
+              // TODO For skey case, no need to add to local cache. This will be controlled by
+              // config cache->add_query_to_cache.
               if (message_type != "skey") {
-                cache_manager_[message_type].emplace(item.first, item.second);
+                cache_manager_.insertCache(message_type, item.first, item.second);
               }
               metadata->setDestination(item.second);
               return parent_.continueHandling(metadata, decoder_event_handler);
@@ -147,8 +143,13 @@ void TrafficRoutingAssistantHandler::complete(const TrafficRoutingAssistant::Res
             .data();
     for (auto& item : data) {
       ENVOY_LOG(debug, "TRA UPDATE {}: {}={}", message_type, item.first, item.second);
-      cache_manager_[message_type].emplace(item.first, item.second);
+      cache_manager_.insertCache(message_type, item.first, item.second);
     }
+    break;
+  }
+  case TrafficRoutingAssistant::ResponseType::FailureResp: {
+    ENVOY_LOG(trace, "TRA === FailureResp");
+    break;
   }
   default:
     break;

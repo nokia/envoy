@@ -127,7 +127,6 @@ message CustomizedAffinity {
 
 // [#next-free-field: 6]
 message CustomizedAffinityEntry {
-
   // Affinity key for TRA query/subscribe, e.g. "lskpmc", if key_name is "text" means use the header content as key.
   string key_name = 1;
 

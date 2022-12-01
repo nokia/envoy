@@ -174,8 +174,7 @@ auto Decoder::sipHeaderType(absl::string_view sip_line) {
   // XXX StringUtil::trim has poor performance
   auto delimiter_index = sip_line.find_first_of(':');
   auto header_type_str = sip_line.substr(0, delimiter_index);
-  // auto header_value = StringUtil::ltrim(sip_line.substr(delimiter_index + strlen(":")));
-  auto header_value = sip_line.substr(delimiter_index + strlen(": "));
+  auto header_value = StringUtil::trim(sip_line.substr(delimiter_index + strlen(":")));
   return std::tuple<HeaderType, absl::string_view>{HeaderTypes::get().str2Header(header_type_str),
                                                    header_value};
 }
@@ -519,7 +518,6 @@ int Decoder::decode() {
       metadata->addMsgHeader(HeaderType::TopLine, sip_line);
       metadata->setMsgType(sipMsgType(sip_line));
       metadata->setMethodType(sipMethod(sip_line));
-      // parseTopLine(sip_line);
       current_header_ = HeaderType::Other;
 
       handler = MessageFactory::create(metadata->methodType(), *this);
