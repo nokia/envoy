@@ -151,7 +151,7 @@ QueryStatus Router::handleCustomizedAffinity(const std::string& header, const st
 
     metadata->parseHeader(header_type);
     if (metadata->header(header_type).hasParam(type)) {
-      host = std::string(metadata->header(header_type).param(key));
+      host = std::string(metadata->header(header_type).param(type));
     }
 
     if (!host.empty()) {
