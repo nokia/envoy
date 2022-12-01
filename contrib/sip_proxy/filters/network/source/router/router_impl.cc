@@ -139,9 +139,14 @@ QueryStatus Router::handleCustomizedAffinity(const std::string& header, const st
 
   bool query = metadata->affinityIteration()->query();
   auto handle_no_query = [&]() {
-    auto header_type = HeaderTypes::get().str2Header(header);
+    auto header_type = HeaderType::Route;
+
     if (metadata->header(HeaderType::Route).empty()) {
       header_type = HeaderType::TopLine;
+    }
+
+    if (!header.empty()) {
+      header_type = HeaderTypes::get().str2Header(header);
     }
 
     metadata->parseHeader(header_type);
