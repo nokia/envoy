@@ -137,7 +137,6 @@ QueryStatus Router::handleCustomizedAffinity(const std::string& header, const st
   std::string host;
   QueryStatus ret = QueryStatus::Stop;
 
-  bool query = metadata->affinityIteration()->query();
   auto handle_no_query = [&]() {
     auto header_type = HeaderType::Route;
 
@@ -176,7 +175,7 @@ QueryStatus Router::handleCustomizedAffinity(const std::string& header, const st
     ret = callbacks_->traHandler()->retrieveTrafficRoutingAssistant(
         header, std::string(metadata->header(header_type).text()), metadata->traContext(),
         *callbacks_, host);
-  } else if (!query) {
+  } else if (!(metadata->affinityIteration()->query())) {
     // query == false, eg. inst-ip=192.168.0.1, use value as host;
     // query == true, eg. lskpmc=S2F3, use value as key to query local cache or TRA.
     ret = handle_no_query();

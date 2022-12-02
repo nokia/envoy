@@ -218,7 +218,6 @@ MethodType Decoder::sipMethod(absl::string_view top_line) {
 Decoder::HeaderHandler::HeaderHandler(MessageHandler& parent) : parent_(parent) {}
 
 int Decoder::HeaderHandler::processPath(absl::string_view& header) {
-  metadata()->deleteInstipOperation(rawOffset(), header);
   metadata()->addEPOperation(rawOffset(), header, HeaderType::Path,
                              parent_.parent_.settings()->localServices());
   return 0;
@@ -282,7 +281,6 @@ int Decoder::HeaderHandler::processPCookieIPMap(absl::string_view& header) {
 }
 
 int Decoder::HeaderHandler::processContact(absl::string_view& header) {
-  metadata()->deleteInstipOperation(rawOffset(), header);
   metadata()->addEPOperation(rawOffset(), header, HeaderType::Contact,
                              parent_.parent_.settings()->localServices());
   return 0;
