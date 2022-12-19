@@ -147,6 +147,9 @@ public:
     } else {
       return affinity_iteration_;
     }
+
+    // When try next affinity, destination set by pervious one become invalid, should be cleared.
+    resetDestination();
   };
 
   void addEPOperation(
