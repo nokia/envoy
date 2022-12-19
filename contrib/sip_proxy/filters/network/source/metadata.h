@@ -142,14 +142,14 @@ public:
   void resetAffinityIteration() { affinity_iteration_ = affinity_.begin(); }
   std::vector<AffinityEntry>::iterator& affinityIteration() { return affinity_iteration_; };
   std::vector<AffinityEntry>::iterator& nextAffinityIteration() {
+    // When try next affinity, destination set by pervious one become invalid, should be cleared.
+    resetDestination();
+
     if (affinity_iteration_ != affinity_.end()) {
       return ++affinity_iteration_;
     } else {
       return affinity_iteration_;
     }
-
-    // When try next affinity, destination set by pervious one become invalid, should be cleared.
-    resetDestination();
   };
 
   void addEPOperation(
