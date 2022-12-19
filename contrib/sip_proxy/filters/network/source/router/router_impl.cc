@@ -466,7 +466,7 @@ FilterStatus Router::messageBegin(MessageMetadataSharedPtr metadata) {
       return messageHandlerWithLoadBalancer(transaction_info, metadata, "",
                                             upstream_request_started);
     } else {
-      ENVOY_STREAM_LOG(debug, "no destination without load balance", *callbacks_);
+      ENVOY_STREAM_LOG(debug, "no destination and stop load balance", *callbacks_);
       throw AppException(AppExceptionType::UnknownMethod, "envoy no endpoint found");
       return FilterStatus::StopIteration;
     }
