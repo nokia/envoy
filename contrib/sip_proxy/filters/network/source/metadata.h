@@ -178,6 +178,7 @@ public:
   std::vector<SipHeader>& listHeader(HeaderType type) { return headers_[type]; }
 
   TraContextMap& traContext() {
+    // Not used yet
     // if (tra_context_map_.empty()) {
     //   auto fromHeader = listHeader(HeaderType::From).front().text();
     //   tra_context_map_.emplace(std::make_pair("method_type", methodStr[methodType()]));
