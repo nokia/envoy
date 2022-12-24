@@ -376,18 +376,18 @@ TEST_F(SipTraTest, Misc) {
   stream_cb->onRemoteClose(status, "");
 }
 
-TEST_F(SipTraTest, TraGetTraContextFromMetadata) {
-  MessageMetadataSharedPtr metadata = std::make_shared<MessageMetadata>("");
-  metadata->setMethodType(MethodType::Register);
-  metadata->addMsgHeader(HeaderType::From, "user@sip.com");
-
-  auto context = metadata->traContext();
-  EXPECT_EQ(context["from_header"], "user@sip.com");
-  EXPECT_EQ(context["method_type"], "REGISTER");
-
-  auto context2 = metadata->traContext();
-  EXPECT_EQ(context2, context);
-}
+//TEST_F(SipTraTest, TraGetTraContextFromMetadata) {
+//  MessageMetadataSharedPtr metadata = std::make_shared<MessageMetadata>("");
+//  metadata->setMethodType(MethodType::Register);
+//  metadata->addMsgHeader(HeaderType::From, "user@sip.com");
+//
+//  auto context = metadata->traContext();
+//  EXPECT_EQ(context["from_header"], "user@sip.com");
+//  EXPECT_EQ(context["method_type"], "REGISTER");
+//
+//  auto context2 = metadata->traContext();
+//  EXPECT_EQ(context2, context);
+//}
 
 } // namespace SipProxy
 } // namespace NetworkFilters
