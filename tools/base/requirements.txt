@@ -818,6 +818,10 @@ requests==2.26.0 \
     # via
     #   pygithub
     #   sphinx
+setuptools==66.0.0 \
+    --hash=sha256:a78d01d1e2c175c474884671dde039962c9d74c7223db7369771fcf6e29ceeab \
+    --hash=sha256:bd6eb2d6722568de6d14b87c44a96fac54b2a45ff5e940e639979a3d1792adb6
+    # via -r requirements.in
 six==1.16.0 \
     --hash=sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926 \
     --hash=sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254
@@ -1035,9 +1039,3 @@ yarl==1.7.2 \
     # via
     #   -r requirements.in
     #   aiohttp
-
-# The following packages are considered to be unsafe in a requirements file:
-setuptools==63.2.0 \
-    --hash=sha256:0d33c374d41c7863419fc8f6c10bfe25b7b498aa34164d135c622e52580c6b16 \
-    --hash=sha256:c04b44a57a6265fe34a4a444e965884716d34bae963119a76353434d6f18e450
-    # via -r requirements.in
