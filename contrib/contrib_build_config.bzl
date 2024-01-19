@@ -35,6 +35,7 @@ CONTRIB_EXTENSIONS = {
 
     "envoy.filters.network.sip_proxy":                          "//contrib/sip_proxy/filters/network/source:config",
     "envoy.filters.sip.router":                                 "//contrib/sip_proxy/filters/network/source/router:config",
+    "envoy.filters.network.ldap_proxy":                         "//contrib/ldap_proxy/filters/network/source:config",
 
     #
     # Private key providers

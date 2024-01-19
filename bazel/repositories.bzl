@@ -356,6 +356,7 @@ def envoy_dependencies(skip_targets = []):
     external_http_archive("bazel_compdb")
     external_http_archive("envoy_build_tools")
     _com_github_maxmind_libmaxminddb()
+    _org_openldap()
 
     # TODO(keith): Remove patch when we update rules_pkg
     external_http_archive(
@@ -1481,3 +1482,13 @@ def _com_github_maxmind_libmaxminddb():
         name = "maxmind",
         actual = "@envoy//bazel/foreign_cc:maxmind_linux",
     )
+
+def _org_openldap():
+    external_http_archive(
+	name = "org_openldap",
+        build_file_content = BUILD_ALL_CONTENT,
+        #build_file_content = _build_all_content(exclude = ["**/*doc*/**", "**/examples/**", "**/plugins/**"]),
+        patches = ["@envoy//bazel/foreign_cc:openldap.patch"],
+        patch_args = ["-p1"],
+    )
+

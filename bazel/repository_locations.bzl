@@ -1555,6 +1555,19 @@ REPOSITORY_LOCATIONS_SPEC = dict(
         extensions = ["envoy.compression.qatzip.compressor"],
         cpe = "N/A",
     ),
+    org_openldap = dict(
+	project_name = "openldap",
+	project_desc = "An open source implementation of the Lightweight Directory Access Protocol",
+	project_url = "http://www.openldap.org",
+	version = "2.6.6",
+	sha256 = "082e998cf542984d43634442dbe11da860759e510907152ea579bdc42fe39ea0",
+	strip_prefix = "openldap-{version}",
+	urls =["https://www.openldap.org/software/download/OpenLDAP/openldap-release/openldap-{version}.tgz"],
+	use_category = ["build"],
+	release_date = "2023-07-31",
+	extensions = ["envoy.extensions.filters.network.ldap_proxy"],
+	cpe = "N/A",
+    ),
 )
 
 def _compiled_protoc_deps(locations, versions):
